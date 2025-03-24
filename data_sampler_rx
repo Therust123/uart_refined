@@ -1,0 +1,37 @@
+module datasampler;
+  input clk,rst_n,in_data,datasample_en;
+  //we are defining the clock at which we have to sample the data through prescale
+  input [5:0]prescale,edge_count;
+  output reg sampled_bit;
+  
+  reg [2:0] samples;
+  wire [5:0] half_edge,half_edge_p,half_edge_n;
+  assign half_edge=(prescale>>1)-1;
+  assign half_edge_p=half_edge+1;
+  assign half_edge_n=half_edge-1;
+  //sample
+  always@(posedge clk or negedge rst_n) begin
+    if(!rst_n) 
+      samples<=3'b000;
+    else if(datasample_en) begin
+      case(edge_count)
+        half_edge_n:samples[0]<=in_data;
+        half_edge:samples[1]<=in_data;
+        half_edge_p:samples[2]<=in_data;
+      endcase
+    end
+    else begin
+      samples<=3'b000;
+    end
+  end
+  //democracy wins
+  always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+      samples<=3'b000;
+    else if(datasample_en) begin
+      sampled_bit<=(samples[0]+samples[1]+samples[2])>=2;
+    end else begin
+      sampled_bit<=1'b0;
+    end
+  end
+endmodule
